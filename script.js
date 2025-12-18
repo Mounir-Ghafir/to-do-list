@@ -4,8 +4,13 @@ let tasks = JSON.parse(localStorage.getItem("tasks")) || []
 
 function addTask() {
     let input = document.getElementById("task-input")
-    let task = input.value.trim()
-    if(!task) return
+    let taskText = input.value.trim()
+    if(!taskText) return
+    
+    let task = {
+        text: taskText,
+        completed: false
+    }
     
     createTaskElement(task)
     tasks.push(task)
@@ -13,48 +18,87 @@ function addTask() {
     input.value = ""
 }
 
-function createTaskElement(taskText) {
+function createTaskElement(task) {
     let li = document.createElement("li")
+    let checkbox = document.createElement("input")
     let p = document.createElement("p")
     let delBtn = document.createElement("button")
     let updBtn = document.createElement("button")
     
-    p.textContent = taskText
+    p.textContent = task.text
+    checkbox.type = "checkbox"
+    checkbox.className = "task-checkbox"
+    checkbox.checked = task.completed
+    
+    if(task.completed) {
+        p.style.textDecoration = "line-through"
+        p.style.color = "#95a5a6"
+    }
+    
     delBtn.textContent = "delete"
     updBtn.textContent = "update"
     
-    delBtn.onclick = () => deleteTask(li, p)
-    updBtn.onclick = () => updateTask(li, p, updBtn)
+    delBtn.className = "delete-btn"
+    updBtn.className = "update-btn"
     
-    li.append(p, delBtn, updBtn)
+    checkbox.onchange = () => toggleTask(task, p, checkbox)
+    delBtn.onclick = () => deleteTask(li, task)
+    updBtn.onclick = () => updateTask(li, p, updBtn, task)
+    
+    li.append(checkbox, p, delBtn, updBtn)
     list.appendChild(li)
 }
 
-function deleteTask(li, p) {
-    li.remove()
-    tasks = tasks.filter(task => task !== p.textContent)
+function toggleTask(task, p, checkbox) {
+    task.completed = checkbox.checked
+    
+    if(task.completed) {
+        p.style.textDecoration = "line-through"
+        p.style.color = "gray"
+    } else {
+        p.style.textDecoration = "none"
+        p.style.color = "black"
+    }
+    
     saveTasks()
 }
 
-function updateTask(li, p, updBtn) {
+function deleteTask(li, taskToDelete) {
+    li.remove()
+    tasks = tasks.filter(task => task !== taskToDelete)
+    saveTasks()
+}
+
+function updateTask(li, p, updBtn, task) {
     let input = document.createElement("input")
     let save = document.createElement("button")
     
     save.textContent = "save"
-    input.value = p.textContent
+    input.value = task.text
+    
+    input.type = "text"
+    save.className = "save-btn"
     
     li.replaceChild(input, p)
     li.replaceChild(save, updBtn)
     
     save.onclick = () => {
-        let newTask = input.value.trim()
-        if(!newTask) return
+        let newTaskText = input.value.trim()
+        if(!newTaskText) return
         
-        tasks = tasks.filter(task => task !== p.textContent)
-        tasks.push(newTask)
+        task.text = newTaskText
+        p.textContent = newTaskText
+        
+        if(task.completed) {
+            p.style.textDecoration = "line-through"
+            p.style.color = "gray"
+        } else {
+            p.style.textDecoration = "none"
+            p.style.color = "black"
+        }
+        
         saveTasks()
         
-        p.textContent = newTask
         li.replaceChild(p, input)
         li.replaceChild(updBtn, save)
     }
@@ -67,6 +111,7 @@ function saveTasks() {
 function loadTasks() {
     tasks.forEach(task => createTaskElement(task))
 }
+
 
 loadTasks()
 addBtn.addEventListener("click", addTask)
